@@ -1,0 +1,1234 @@
+/* ==========================================================================
+   PETUALANGAN BIMA & LALA — KOMIK FLIPBOOK INTERAKTIF
+   Realistic Book Styling with Image Hotspots & Sound Effects
+   ========================================================================== */
+
+:root {
+  --blue: #1e6faa;
+  --blue-dark: #124a73;
+  --blue-light: #eaf5ff;
+  --yellow: #f8c238;
+  --orange: #f27c24;
+  --green: #2fa36b;
+  --green-light: #e8f8f0;
+  --red: #df4b4b;
+  --red-light: #fdeeee;
+  --ink: #223447;
+  --muted: #6b7d8f;
+  --paper: #fffef8;
+
+  /* Book Geometry */
+  --book-width: min(94vw, 1120px);
+  --book-ratio: 0.62; /* Height / Width ratio close to 16:9 */
+  --spine-width: 24px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 25% 15%, #cde6ff 0%, transparent 60%),
+    radial-gradient(ellipse at 85% 85%, #fcedc9 0%, transparent 55%),
+    linear-gradient(155deg, #b9daf7 0%, #fef7e4 45%, #cae5fa 100%);
+  background-attachment: fixed;
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ==========================================================================
+   SPLASH SCREEN
+   ========================================================================== */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #18598a, #0e3b5e);
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
+}
+
+.splash.hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash-inner {
+  text-align: center;
+  color: #fff;
+  padding: 24px;
+  max-width: 440px;
+}
+
+.splash-icon {
+  font-size: 84px;
+  animation: bouncePop 0.8s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.splash-title {
+  font-family: 'Fredoka', 'Nunito', sans-serif;
+  font-size: clamp(30px, 6vw, 42px);
+  font-weight: 700;
+  margin: 14px 0 4px;
+  line-height: 1.15;
+}
+
+.splash-title span {
+  color: var(--yellow);
+}
+
+.splash-sub {
+  font-size: 16px;
+  opacity: 0.85;
+  font-weight: 700;
+}
+
+.splash-loader {
+  width: 240px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  margin: 28px auto 10px;
+  overflow: hidden;
+}
+
+.splash-bar {
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--yellow), var(--orange));
+  border-radius: 12px;
+  animation: splashFill 1.8s ease-in-out forwards;
+}
+
+.splash-hint {
+  font-size: 13px;
+  opacity: 0.65;
+}
+
+@keyframes splashFill {
+  0% { width: 0%; }
+  60% { width: 75%; }
+  100% { width: 100%; }
+}
+
+@keyframes bouncePop {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ==========================================================================
+   TOPBAR
+   ========================================================================== */
+.topbar {
+  height: 58px;
+  background: linear-gradient(135deg, #1c6aa4, #124d77);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 max(3vw, 16px);
+  box-shadow: 0 4px 20px rgba(10, 40, 70, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+}
+
+.brand-icon {
+  font-size: 26px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.brand-text strong {
+  display: block;
+  font-family: 'Fredoka', 'Nunito', sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.brand-text small {
+  display: block;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 700;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font: 800 12px 'Nunito', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.tool-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
+}
+
+.tool-btn:active {
+  transform: translateY(1px);
+}
+
+/* ==========================================================================
+   BOOK STAGE (VIEWPORT & NAVIGATION ARROWS)
+   ========================================================================== */
+.book-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 22px 14px 10px;
+  position: relative;
+  max-width: 1360px;
+  margin: 0 auto;
+  perspective: 2000px;
+}
+
+/* Navigation Arrow Buttons */
+.nav-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 50;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  flex-shrink: 0;
+  outline: none;
+}
+
+.arrow-circle {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffffff, #f4f9fd);
+  color: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 8px 24px rgba(20, 55, 90, 0.18),
+    0 2px 6px rgba(20, 55, 90, 0.1);
+  border: 3px solid #fff;
+  transition: all 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.arrow-circle svg {
+  width: 28px;
+  height: 28px;
+}
+
+.arrow-caption {
+  font-family: 'Fredoka', 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--blue-dark);
+  background: rgba(255, 255, 255, 0.85);
+  padding: 3px 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  letter-spacing: 0.3px;
+  transition: background 0.2s ease;
+}
+
+.nav-arrow:hover:not(:disabled) .arrow-circle {
+  transform: scale(1.14);
+  background: linear-gradient(135deg, #ffffff, #e8f4fc);
+  color: var(--blue-dark);
+  box-shadow:
+    0 12px 32px rgba(20, 55, 90, 0.25),
+    0 4px 10px rgba(20, 55, 90, 0.12);
+}
+
+.nav-arrow:hover:not(:disabled) .arrow-caption {
+  background: #fff;
+}
+
+.nav-arrow:active:not(:disabled) .arrow-circle {
+  transform: scale(0.96);
+}
+
+.nav-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   REALISTIC BOOK SHELL & 3D PAGE EFFECTS
+   ========================================================================== */
+.book-container {
+  position: relative;
+  width: var(--book-width);
+  background: var(--paper);
+  border-radius: 8px 24px 24px 8px;
+  box-shadow:
+    /* Under-cover depth on left */
+    -5px 0 0 -1px #d6cbb8,
+    -10px 0 0 -2px #c4b69f,
+    /* Stacked paper edge 3D depth on right & bottom */
+    4px 5px 0 #ede3d1,
+    8px 9px 0 #e2d5c0,
+    12px 13px 0 #d7c7ae,
+    16px 17px 0 #cbb99d,
+    /* Realistic ambient contact & spread shadows */
+    0 32px 75px rgba(10, 36, 62, 0.28),
+    0 12px 28px rgba(10, 36, 62, 0.16);
+  overflow: hidden;
+  border: 5px solid #ebdcc5;
+  transform-style: preserve-3d;
+}
+
+/* Leather Spine with Golden Embossed Ribs & Stitches */
+.book-spine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--spine-width);
+  background: linear-gradient(
+    90deg,
+    #531c12 0%,
+    #7a2a19 16%,
+    #9e3c23 38%,
+    #b84729 58%,
+    #832d1a 85%,
+    #4a170c 100%
+  );
+  z-index: 25;
+  border-radius: 4px 0 0 4px;
+  box-shadow:
+    inset -4px 0 10px rgba(0, 0, 0, 0.45),
+    inset 2px 0 4px rgba(255, 255, 255, 0.25);
+  border-right: 1.5px dashed rgba(247, 212, 136, 0.55);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  padding: 40px 0;
+}
+
+.spine-line {
+  width: 15px;
+  height: 3.5px;
+  background: linear-gradient(90deg, #f7d488, #fff4cf, #c89a42);
+  border-radius: 2px;
+  box-shadow:
+    0 1.5px 3px rgba(0, 0, 0, 0.5),
+    0 0 4px rgba(247, 212, 136, 0.6);
+}
+
+/* Stacked Pages Texture on the right with page layers */
+.book-edge {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  right: 0;
+  width: 12px;
+  background: repeating-linear-gradient(
+    180deg,
+    #fffef9 0px,
+    #fffef9 1px,
+    #efe5d2 1px,
+    #efe5d2 2px,
+    #dfd2b9 2px,
+    #dfd2b9 3px
+  );
+  z-index: 15;
+  border-left: 1px solid #d8cbaf;
+  box-shadow: inset 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* The Book Page */
+.book-page {
+  position: relative;
+  margin-left: var(--spine-width);
+  margin-right: 10px;
+  background: var(--paper);
+  min-height: calc(var(--book-width) * var(--book-ratio));
+  overflow: hidden;
+  transform-origin: left center;
+}
+
+/* Page Curvature Highlight / Vignette */
+.book-page::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 24px;
+  background: linear-gradient(
+    270deg,
+    rgba(0, 0, 0, 0.08) 0%,
+    rgba(0, 0, 0, 0.02) 60%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 24;
+}
+
+/* Center Crease / Spine Fold Shadow (gutter) */
+.book-crease {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 44px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.22) 0%,
+    rgba(0, 0, 0, 0.11) 28%,
+    rgba(0, 0, 0, 0.03) 65%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 25;
+}
+
+/* Page Ribbon Topbar */
+.page-top-bar {
+  height: 36px;
+  background: linear-gradient(90deg, #fbf7ee, #f3ece0);
+  border-bottom: 1px solid #ebdcc5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px 0 46px;
+  position: relative;
+  z-index: 30;
+}
+
+.page-tag {
+  font-family: 'Fredoka', 'Nunito', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--blue);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.page-tag::before {
+  content: '★';
+  color: var(--yellow);
+  font-size: 12px;
+}
+
+.page-counter {
+  font-family: 'Fredoka', 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #7d6b52;
+  background: #fbf5eb;
+  padding: 2px 10px;
+  border-radius: 12px;
+  border: 1px solid #e7dac5;
+}
+
+/* Page Viewport where content renders */
+.page-viewport {
+  position: relative;
+  width: 100%;
+  min-height: calc((var(--book-width) - var(--spine-width)) * var(--book-ratio) - 36px);
+  background: var(--paper);
+  overflow: hidden;
+}
+
+/* Realistic 3D Page Flip Transitions with Lighting */
+.page-flip-forward {
+  animation: pageTurnForward 0.48s cubic-bezier(0.2, 0.8, 0.25, 1);
+  transform-origin: left center;
+}
+
+.page-flip-backward {
+  animation: pageTurnBackward 0.48s cubic-bezier(0.2, 0.8, 0.25, 1);
+  transform-origin: right center;
+}
+
+@keyframes pageTurnForward {
+  0% {
+    opacity: 0.88;
+    transform: perspective(1600px) rotateY(-14deg) scale(0.98) translateX(12px);
+    filter: brightness(0.92);
+  }
+  45% {
+    filter: brightness(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1600px) rotateY(0) scale(1) translateX(0);
+    filter: brightness(1);
+  }
+}
+
+@keyframes pageTurnBackward {
+  0% {
+    opacity: 0.88;
+    transform: perspective(1600px) rotateY(14deg) scale(0.98) translateX(-12px);
+    filter: brightness(0.92);
+  }
+  45% {
+    filter: brightness(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1600px) rotateY(0) scale(1) translateX(0);
+    filter: brightness(1);
+  }
+}
+
+/* ==========================================================================
+   COMIC SLIDE PRESENTATION (LARGE PICTURES)
+   ========================================================================== */
+.comic-slide-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fdfaf4;
+}
+
+.comic-picture {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+/* Container for interactive overlays over image */
+.hotspot-overlay-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* ==========================================================================
+   INTERACTIVE HOTSPOTS ON TOP OF IMAGES
+   ========================================================================== */
+.hotspot {
+  position: absolute;
+  pointer-events: auto;
+  cursor: pointer;
+  border-radius: 14px;
+  transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Pulsing soft border indicator so users notice it's clickable */
+  border: 2px dashed rgba(30, 111, 170, 0.45);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 0 10px rgba(30, 111, 170, 0.15);
+}
+
+.hotspot.circle {
+  border-radius: 50%;
+}
+
+.hotspot:hover:not(.answered) {
+  background: rgba(255, 255, 255, 0.25);
+  border: 3px solid var(--blue);
+  box-shadow:
+    0 0 20px rgba(30, 111, 170, 0.5),
+    inset 0 0 10px rgba(255, 255, 255, 0.5);
+  transform: scale(1.08);
+}
+
+.hotspot:active:not(.answered) {
+  transform: scale(0.95);
+}
+
+/* Correct Answer Hit */
+.hotspot.correct {
+  border: 3.5px solid var(--green) !important;
+  background: rgba(47, 163, 107, 0.35) !important;
+  box-shadow:
+    0 0 24px rgba(47, 163, 107, 0.65),
+    inset 0 0 14px rgba(47, 163, 107, 0.4) !important;
+  transform: scale(1.05);
+  animation: correctBounce 0.45s ease;
+}
+
+.hotspot.correct::after {
+  content: '✓';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Wrong Answer Hit */
+.hotspot.wrong {
+  border: 3.5px solid var(--red) !important;
+  background: rgba(223, 75, 75, 0.35) !important;
+  box-shadow:
+    0 0 24px rgba(223, 75, 75, 0.65),
+    inset 0 0 14px rgba(223, 75, 75, 0.4) !important;
+  animation: wrongWobble 0.4s ease;
+}
+
+.hotspot.wrong::after {
+  content: '✕';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes correctBounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1.05); }
+}
+
+@keyframes wrongWobble {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+/* ==========================================================================
+   SLIDE 2: PETUNJUK PENGGUNAAN PAGE
+   ========================================================================== */
+.petunjuk-page {
+  padding: 36px 48px;
+  background: linear-gradient(150deg, #f7fbff 0%, #fffdf8 50%, #fdf8ed 100%);
+  min-height: 100%;
+}
+
+.petunjuk-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.petunjuk-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--yellow), var(--orange));
+  color: #533400;
+  font-family: 'Fredoka', 'Nunito', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 18px;
+  border-radius: 20px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.petunjuk-title {
+  font-family: 'Fredoka', 'Nunito', sans-serif;
+  font-size: clamp(24px, 4vw, 34px);
+  color: var(--blue-dark);
+  font-weight: 700;
+  margin: 0;
+}
+
+.petunjuk-welcome {
+  background: #ffffff;
+  border: 2px solid #d8ebfa;
+  border-radius: 18px;
+  padding: 16px 22px;
+  margin-bottom: 22px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--ink);
+  box-shadow: 0 4px 16px rgba(25, 75, 120, 0.06);
+}
+
+.petunjuk-welcome span.emoji {
+  font-size: 26px;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.petunjuk-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.p-card {
+  background: #ffffff;
+  border: 2px solid #e7f0f8;
+  border-radius: 18px;
+  padding: 18px 16px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.p-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(25, 75, 120, 0.12);
+  border-color: #c9e3f7;
+}
+
+.p-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.p-card-icon.blue { background: #e0f2fe; }
+.p-card-icon.yellow { background: #fef3c7; }
+.p-card-icon.green { background: #dcfce7; }
+.p-card-icon.purple { background: #f3e8ff; }
+
+.p-card-body h4 {
+  font-family: 'Fredoka', 'Nunito', sans-serif;
+  font-size: 15px;
+  color: var(--blue-dark);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.p-card-body p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.petunjuk-footer-card {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-radius: 16px;
+  padding: 14px 20px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: #78350f;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+}
+
+/* ==========================================================================
+   SLIDE 13: PENUTUP & REKAP SKOR
+   ========================================================================== */
+.final-score-overlay {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(92%, 760px);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 20px;
+  padding: 12px 20px;
+  box-shadow: 0 10px 32px rgba(15, 45, 80, 0.22);
+  border: 2px solid #fce7b8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  z-index: 30;
+  transition: transform 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28), opacity 0.3s ease;
+}
+
+.final-score-overlay.minimized {
+  transform: translateX(-50%) translateY(-140%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.final-score-text {
+  text-align: left;
+}
+
+.final-score-text h3 {
+  font-family: 'Fredoka', 'Nunito', sans-serif;
+  font-size: 17px;
+  color: var(--blue-dark);
+  margin-bottom: 2px;
+}
+
+.final-score-text p {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.final-score-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.score-num-box {
+  background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+  color: #fff;
+  border-radius: 12px;
+  padding: 6px 14px;
+  text-align: center;
+}
+
+.score-num-box strong {
+  display: block;
+  font-size: 20px;
+  font-family: 'Fredoka', 'Nunito', sans-serif;
+  line-height: 1;
+}
+
+.score-num-box small {
+  font-size: 9.5px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.btn-retry {
+  background: linear-gradient(135deg, var(--yellow), var(--orange));
+  color: #552f00;
+  border: none;
+  border-radius: 12px;
+  padding: 8px 14px;
+  font: 800 12px 'Fredoka', 'Nunito', sans-serif;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(242, 124, 36, 0.3);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-retry:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(242, 124, 36, 0.4);
+}
+
+.btn-toggle-score {
+  background: #f1f5f9;
+  color: var(--muted);
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 8px 10px;
+  font: 700 11px 'Nunito', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-toggle-score:hover {
+  background: #e2e8f0;
+  color: var(--ink);
+}
+
+/* Floating button to show score when minimized */
+.btn-show-score {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  background: linear-gradient(135deg, var(--yellow), var(--orange));
+  color: #552f00;
+  border: 2px solid #fff;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font: 800 12px 'Fredoka', 'Nunito', sans-serif;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  z-index: 30;
+  transition: all 0.25s ease;
+}
+
+.btn-show-score:hover {
+  transform: translateY(-2px) scale(1.05);
+}
+
+/* ==========================================================================
+   HINT BANNER
+   ========================================================================== */
+.hint-banner {
+  max-width: 860px;
+  margin: 10px auto 0;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid #d5e5f2;
+  border-radius: 16px;
+  padding: 8px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 16px rgba(20, 50, 80, 0.08);
+}
+
+.hint-icon {
+  font-size: 18px;
+}
+
+.hint-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue-dark);
+}
+
+/* ==========================================================================
+   BOTTOM CONTROLS & THUMBNAILS
+   ========================================================================== */
+.bottom-controls {
+  max-width: 980px;
+  margin: 12px auto 0;
+  padding: 0 16px;
+  text-align: center;
+}
+
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.progress-label {
+  font-family: 'Fredoka', 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--blue-dark);
+  min-width: 130px;
+}
+
+.progress-track {
+  width: 260px;
+  height: 8px;
+  background: #d4e5f3;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 7.14%;
+  background: linear-gradient(90deg, var(--yellow), var(--orange));
+  border-radius: 12px;
+  transition: width 0.3s ease;
+}
+
+/* Thumbnails */
+.thumbnail-strip {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  overflow-x: auto;
+  padding: 8px 4px 12px;
+  scrollbar-width: thin;
+}
+
+.thumb-item {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid #d5e5ef;
+  background: #ffffff;
+  color: var(--blue-dark);
+  font-family: 'Fredoka', 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.thumb-item:hover {
+  border-color: var(--blue);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(30, 111, 170, 0.2);
+}
+
+.thumb-item.active {
+  background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+  color: #fff;
+  border-color: var(--blue-dark);
+  box-shadow: 0 4px 14px rgba(30, 111, 170, 0.35);
+  transform: translateY(-2px) scale(1.06);
+}
+
+.thumb-item.has-quiz::after {
+  content: '●';
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  color: var(--orange);
+  font-size: 9px;
+}
+
+/* ==========================================================================
+   TOAST NOTIFICATION (POPUP ON ANSWER)
+   ========================================================================== */
+.toast-notification {
+  position: fixed;
+  top: 74px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow:
+    0 16px 48px rgba(15, 45, 80, 0.22),
+    0 4px 12px rgba(15, 45, 80, 0.1);
+  border: 2px solid #dbeafe;
+  z-index: 9999;
+  transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  animation: toastSlideDown 0.35s ease;
+}
+
+.toast-icon {
+  font-size: 28px;
+}
+
+.toast-title {
+  font-family: 'Fredoka', 'Nunito', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--blue-dark);
+}
+
+.toast-msg {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.toast-notification.success {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.toast-notification.wrong {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+@keyframes toastSlideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+.app-footer {
+  text-align: center;
+  color: #7b8e9f;
+  font-size: 11px;
+  padding: 14px 16px 24px;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN (TABLET & MOBILE)
+   ========================================================================== */
+@media (max-width: 960px) {
+  :root {
+    --book-width: 96vw;
+    --spine-width: 18px;
+  }
+
+  .book-stage {
+    padding: 16px 6px 8px;
+    gap: 8px;
+  }
+
+  .arrow-circle {
+    width: 48px;
+    height: 48px;
+  }
+
+  .arrow-circle svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .arrow-caption {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+
+  .petunjuk-page {
+    padding: 24px 20px;
+  }
+
+  .petunjuk-cards {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .final-score-overlay {
+    flex-direction: column;
+    text-align: center;
+    padding: 14px 18px;
+  }
+
+  .final-score-text {
+    text-align: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .topbar {
+    height: 52px;
+    padding: 0 12px;
+  }
+
+  .brand-text strong {
+    font-size: 14px;
+  }
+
+  .brand-text small {
+    display: none;
+  }
+
+  .tool-label {
+    display: none;
+  }
+
+  .tool-btn {
+    padding: 6px 10px;
+    border-radius: 50%;
+  }
+
+  .book-stage {
+    gap: 4px;
+  }
+
+  .arrow-circle {
+    width: 40px;
+    height: 40px;
+  }
+
+  .arrow-circle svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .arrow-caption {
+    display: none;
+  }
+
+  .book-container {
+    border-radius: 6px 14px 14px 6px;
+    border-width: 3px;
+  }
+
+  .page-top-bar {
+    height: 28px;
+    padding: 0 12px 0 24px;
+  }
+
+  .page-tag {
+    font-size: 9px;
+  }
+
+  .page-counter {
+    font-size: 10px;
+  }
+
+  .thumb-item {
+    width: 36px;
+    height: 36px;
+    font-size: 11px;
+    border-radius: 9px;
+  }
+
+  .progress-track {
+    width: 140px;
+  }
+
+  .hint-banner {
+    padding: 6px 12px;
+  }
+
+  .hint-text {
+    font-size: 11px;
+  }
+}
